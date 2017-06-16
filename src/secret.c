@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <termios.h>
 
 #include "trim.h"
 
@@ -15,11 +16,11 @@ void usage(char* name) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 1) {
+    if (argc < 2) {
         usage(argv[0]);
         exit(1);
     }
-    if (strcasecmp(argv[1], "help") == 0) {
+    else if (strcasecmp(argv[1], "help") == 0) {
         usage(argv[0]);
         exit(0);
     }
@@ -38,14 +39,73 @@ int main(int argc, char** argv) {
             }
         }
     }
+    int homelen = strlen(home);
 
+    //
+    // Read and check password
+    //
+    const char* pwname = "/.secretpw";
+    const size_t pwlen = homelen + strlen(pwname);
+    char pwpath[pwlen + 1];
+    strncpy(pwpath, home, homelen);
+    strncpy(pwpath + homelen, pwname, strlen(pwname));
+
+    FILE* pwfile = NULL;
+    if (access(pwpath, F_OK) == -1) {
+        fprintf(stderr, "The password file '%s' doesn't exist\n", pwpath);
+    } else {
+        pwfile = fopen(pwpath, "r");
+    }
+
+    size_t len = 0;
+    char* line = NULL;
+    ssize_t nread = getline(&line, &len, pwfile);
+    fclose(pwfile);
+
+    // Sanitise password
+    char* password = strdup(triml(trimr(line)));
+    free(line);
+
+    /* Turn echoing off and fail if we can't. */
+    struct termios old, new;
+    if (tcgetattr (fileno(stdout), &old) != 0)
+        return -1;
+    new = old;
+    new.c_lflag &= ~ECHO;
+    if (tcsetattr (fileno(stdout), TCSAFLUSH, &new) != 0)
+        return -1;
+    /* ---------- */
+
+    for(int i = 0; i < 3; i++) {
+        // Read user input
+        char attempt[64];
+        fprintf(stderr, "Enter secrets password: ");
+        gets(attempt);
+        fprintf(stderr, "\n");
+
+        if (strcmp(password, attempt) != 0) {
+            sleep(2);
+            fprintf(stderr, "Incorrect password, please try again (%d/3)\n", (i + 1));
+            continue;
+        } else {
+            (void) tcsetattr (fileno(stdout), TCSAFLUSH, &old);
+            break;
+        }
+
+        exit(10);
+    }
+    fprintf(stderr, "\n");
+    free(password);
+
+    //
+    // Open secrets file
+    //
+    len = keyring == NULL ? strlen(home) + 10 : strlen(keyring);
     FILE* keyfile = NULL;
-    int len = keyring == NULL ? strlen(home) + 10 : strlen(keyring);
     char buf[len];
 
     if (keyring == NULL) {
         // ~/.secrets
-        int homelen = strlen(home);
         strncpy(buf, home, homelen);
         strncpy(buf + homelen, "/.secrets", 10);
     } else {
@@ -59,7 +119,9 @@ int main(int argc, char** argv) {
         keyfile = fopen(keyring, "r+");
     }
 
-
+    //
+    // Perform requested operation
+    //
     if (strcasecmp(argv[1], "read") == 0) {
         /* Open file and list secrets out */
         printf("Reading passwords is not implemented yet...\n");
