@@ -1,8 +1,8 @@
 EXEC     = $(shell basename $$(pwd))
 CC       = gcc
 
-CFLAGS   = -std=gnu11 -O3 -Wall -Wextra -Wpedantic -Wstrict-aliasing
-CFLAGS   += -g
+CFLAGS   = -std=gnu99 -O3 -Wall -Wextra -Wpedantic -Wstrict-aliasing
+CFLAGS   += -g -fno-stack-protector
 
 SRC      = $(wildcard src/*.c)
 OBJ      = $(patsubst src/%.c,obj/%.o,$(SRC))
