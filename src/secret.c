@@ -102,6 +102,7 @@ int main(int argc, char** argv) {
                 char* trimmed = triml(trimr(line + 1));
                 int len = strlen(trimmed);
                 name = malloc(len);
+                memset(name, 0, len);
                 // Save trimmed line as 'name'
                 strncpy(name, trimmed, len);
             }
