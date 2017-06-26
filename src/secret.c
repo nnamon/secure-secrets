@@ -119,6 +119,7 @@ correct:
 
     if (access(keyring, F_OK) == -1) {
         fprintf(stderr, "The keyring file '%s' doesn't exist\n", keyring);
+        exit(6);
     } else {
         keyfile = fopen(keyring, "r+");
     }
