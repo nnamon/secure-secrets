@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 
     FILE* pwfile = NULL;
     if (access(pwpath, F_OK) == -1) {
-        fprintf(stderr, "The password file '%s' doesn't exist\n", pwpath);
+        fprintf(stderr, "Error reading password file '%s': %s\n", pwpath, strerror(errno));
         exit(5);
     } else {
         pwfile = fopen(pwpath, "r");
@@ -118,7 +118,7 @@ correct:
     keyring = buf;
 
     if (access(keyring, F_OK) == -1) {
-        fprintf(stderr, "The keyring file '%s' doesn't exist\n", keyring);
+        fprintf(stderr, "Error reading secrets file '%s': %s\n", keyring, strerror(errno));
         exit(6);
     } else {
         keyfile = fopen(keyring, "r+");
