@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
     FILE* pwfile = NULL;
     if (access(pwpath, F_OK) == -1) {
         fprintf(stderr, "The password file '%s' doesn't exist\n", pwpath);
+        exit(5);
     } else {
         pwfile = fopen(pwpath, "r");
     }
