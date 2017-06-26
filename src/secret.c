@@ -60,11 +60,17 @@ int main(int argc, char** argv) {
 
     size_t len = 0;
     char* line = NULL;
-    ssize_t nread = getline(&line, &len, pwfile);
+    getline(&line, &len, pwfile);
     fclose(pwfile);
 
     // Sanitise password
-    char* password = strdup(triml(trimr(line)));
+    char* temp = triml(trimr(line));
+    len = strlen(temp);
+    char attempt[64];
+    char password[64];
+    memset(attempt, 0, 64);
+    memset(password, 0, len + 1);
+    strncpy(&password, temp, len);
     free(line);
 
     /* Turn echoing off and fail if we can't. */
@@ -79,24 +85,21 @@ int main(int argc, char** argv) {
 
     for(int i = 0; i < 3; i++) {
         // Read user input
-        char attempt[64];
         fprintf(stderr, "Enter secrets password: ");
         gets(attempt);
         fprintf(stderr, "\n");
 
-        if (strcmp(password, attempt) != 0) {
+        if (strncmp(password, attempt, strlen(attempt)) != 0) {
             sleep(2);
             fprintf(stderr, "Incorrect password, please try again (%d/3)\n", (i + 1));
-            continue;
         } else {
             (void) tcsetattr (fileno(stdout), TCSAFLUSH, &old);
-            break;
+            goto correct;
         }
-
-        exit(10);
     }
+    exit(10);
+correct:
     fprintf(stderr, "\n");
-    free(password);
 
     //
     // Open secrets file
